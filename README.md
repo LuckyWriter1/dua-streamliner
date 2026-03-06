@@ -28,9 +28,9 @@ The system will generate a pre-filled Word document containing the completed DUA
 
 
 
-#1. Frontend design
+# 1. Frontend design
 
-##1.1 Technology stack
+## 1.1 Technology stack
 
 - Application type: Web App (Single Page Application - SPA)
 - Web framework: React 19.2
@@ -205,3 +205,4 @@ Create a grayscale low-fidelity wireframe for a logout confirmation screen in an
 
 
 ---
+
