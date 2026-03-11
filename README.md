@@ -206,3 +206,96 @@ Create a grayscale low-fidelity wireframe for a logout confirmation screen in an
 
 ---
 
+# UX test results
+## 1. Test Participants
+
+The usability test was conducted with **3 participants**.  
+All participants were university students with basic experience using web applications.
+
+| Participant | Background |
+|-------------|------------|
+| Sebastian Valverde | Mechatronics Engineering Student |
+| Juan Diego Esquivel | Mechatronics Engineering Student |
+| Arturo Carranza | Industrial Maintenance Engineering Student |
+
+---
+
+## 2. Tasks Evaluated
+
+1. Where would you click to log into the system?
+2. Where would you upload the DUA template?
+3. Where would you check the progress of the document analysis?
+4. Where would you download the generated report?
+5. Where would you log out of the system?
+
+---
+
+## 3. Test Results
+
+| Task | Success Rate | Observations |
+|-----|-------------|-------------|
+| Login | 100% | All participants immediately identified and clicked the login button without hesitation. |
+| Upload template | 100% | Users clearly recognized the upload template section and completed the action successfully. |
+| Monitor progress | 100% | Participants quickly understood the progress monitoring interface and easily located the processing status. |
+| Download report | 100% | Users intuitively identified the download report option and completed the task without confusion. |
+| Logout | 100% | All participants easily located the logout option and understood how to end the session. |
+
+---
+
+## 4. Heatmap
+
+### Figure 1 — Login Screen Heatmap
+
+![Heatmap Login](images/heatmap-login.png)
+
+**User Clicks Table**
+
+![Login Screen](images/User-login.png)
+
+---
+
+### Figure 2 — Configure Generator Screen Heatmap
+
+![Heatmap Upload Template](images/heatmap-upload.png)
+
+**User Clicks Table**
+
+![Upload Screen](images/User-upload.png)
+
+---
+
+### Figure 3 — Monitoring Progress Screen Heatmap
+
+![Heatmap Monitoring](images/heatmap-monitoring.png)
+
+**User Clicks Table**
+
+![Monitoring Screen](images/User-Monitoring.png)
+
+---
+
+### Figure 4 — Result and Export Screen Heatmap
+
+![Heatmap Result](images/heatmap-result.png)
+
+**User Clicks Table**
+
+![Result Screen](images/User-result.png)
+
+---
+
+### Figure 5 — Logout Screen Heatmap
+
+![Heatmap Logout](images/heatmap-logout.png)
+
+**User Clicks Table**
+
+![Logout Screen](images/User-logout.png)
+
+---
+
+## 5. Conclusion
+
+The usability test results indicate that the interface is intuitive and easy to understand. All participants were able to complete the assigned tasks successfully, which suggests that the layout and labeling of the interface clearly guide users through the main workflow of the system. The heatmap results also show that users consistently interacted with the expected interface elements. Overall, the prototype demonstrates a clear and effective design that supports the intended user actions.
+
+
