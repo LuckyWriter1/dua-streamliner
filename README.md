@@ -596,3 +596,216 @@ This reduces invalid data and improves system security.
 The frontend security design of DUA Streamliner integrates Azure Entra ID authentication, role-based authorization, protected navigation, secure session management, and centralized security services. The structure clearly defines responsibilities through dedicated classes and project organization, ensuring a secure, scalable, and maintainable frontend architecture.
 
 
+# 1.5 Layered design
+
+The frontend of DUA Streamliner follows a **layered architecture** combined with **Server-Side Rendering (SSR)** using Node.js and React. This design separates responsibilities across multiple layers, improving scalability, maintainability, and clarity of the system.
+
+---
+
+## 1.5.1 SSR and request flow
+
+The frontend performs **Server-Side Rendering (SSR)** through Azure App Service.
+
+When a request is received:
+
+1. The system checks if there is an authenticated session.
+2. If no session exists, the **Authentication Layer** is invoked.
+3. If authentication is successful, the application renders the requested UI through the **Components Layer**.
+
+---
+
+## 1.5.2 Main layers
+
+### Authentication Layer
+
+Responsible for controlling access to the system.
+
+- validates authentication state  
+- integrates with Azure Entra ID  
+- redirects unauthenticated users  
+- enables access to protected resources  
+
+---
+
+### Components Layer (Presentation)
+
+This layer renders the user interface and follows the **Atomic Design methodology**:
+
+- atoms  
+- molecules  
+- organisms  
+- templates  
+- pages  
+
+Responsibilities:
+
+- render UI  
+- display system states  
+- handle user interaction  
+
+---
+
+### Hooks Layer
+
+Located inside the components layer, this layer connects UI actions with application logic.
+
+Responsibilities:
+
+- manage local state  
+- handle user interactions  
+- call services  
+
+---
+
+### Services Layer
+
+This layer contains the application operations and business logic.
+
+Responsibilities:
+
+- authentication handling  
+- DUA generation workflow  
+- process monitoring  
+- result export  
+
+Services coordinate all interactions between frontend and backend.
+
+---
+
+## 1.5.3 Supporting layers
+
+### ApiClients Layer
+
+- contains classes that communicate with external APIs  
+- sends and receives data from backend services  
+
+---
+
+### Settings Layer
+
+- accesses environment variables  
+- retrieves configuration data from **Azure Key Vault**  
+- provides API keys and endpoints to ApiClients  
+
+---
+
+### Utils Layer
+
+- provides reusable utility functions  
+- used across services and components  
+
+---
+
+## 1.5.4 Shared layers
+
+These layers are accessible from all parts of the system:
+
+### Models
+
+- defines data structures (DUA, user, job status, results)  
+
+---
+
+### Data Validation Layer
+
+- validates all data using schemas (Zod)  
+- ensures consistency in API requests and responses  
+
+---
+
+### State Management Layer
+
+- manages global state (authentication, job status, results)  
+
+---
+
+### Notification Service Layer
+
+- allows subscription to events using callbacks  
+- manages asynchronous communication  
+
+All asynchronous API calls are handled through this layer using callbacks.
+
+---
+
+### Logs Layer
+
+- registers system events  
+- sends logs to Azure Application Insights via ApiClients  
+
+---
+
+### Exception Handling Layer
+
+- provides centralized error handling  
+- ensures consistent error management across layers  
+
+---
+
+## 1.5.5 Layer interaction
+
+The interaction between layers follows this structure:
+
+User Browser
+      ↓
+Azure App Service (NodeJS + React SSR)
+      ↓
+Authentication Layer
+      ↓
+Components Layer (Atomic Design)
+      ↓
+Hooks Layer
+      ↓
+Services Layer
+      ↓
++-----------------------------+
+| Utils | ApiClients | Settings |
++-----------------------------+
+      ↓
+Azure Key Vault
+      ↓
+External APIs
+      ↓
+Notification Service (Callbacks)
+
+
+---
+
+## 1.5.6 Cross-layer communication
+
+- ApiClients use **Settings** to obtain API keys and URLs  
+- ApiClients interact with external APIs  
+- responses are validated using **Models + Data Validation**  
+- all layers can access:
+  - Models  
+  - Utils  
+  - State Management  
+
+---
+
+## 1.5.7 CI/CD and deployment context
+
+The frontend is deployed using:
+
+- Azure DevOps Repositories  
+- Azure DevOps Pipelines  
+- Environments: Dev / Stage / Production  
+- Azure App Service  
+
+---
+
+## 1.5.8 Benefits of the layered design
+
+- clear separation of responsibilities  
+- improved maintainability  
+- scalable architecture  
+- reduced coupling between layers  
+- easier debugging and testing  
+
+---
+
+## Conclusion
+
+The layered design of DUA Streamliner integrates SSR, modular frontend architecture, and cloud-based configuration. Each layer has a clear responsibility and interacts with others in a controlled manner, ensuring a robust, scalable, and maintainable frontend system aligned with enterprise practices.
+
+
