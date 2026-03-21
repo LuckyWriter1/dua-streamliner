@@ -299,3 +299,164 @@ All participants were university students with basic experience using web applic
 The usability test results indicate that the interface is intuitive and easy to understand. All participants were able to complete the assigned tasks successfully, which suggests that the layout and labeling of the interface clearly guide users through the main workflow of the system. The heatmap results also show that users consistently interacted with the expected interface elements. Overall, the prototype demonstrates a clear and effective design that supports the intended user actions.
 
 
+
+# 1.3 Component design strategy
+
+The frontend of DUA Streamliner follows a **component-based design strategy** using React and TypeScript, focused on reusability, consistency, and scalability. The design is aligned with the system workflow (login, configuration, monitoring, result, and export) and ensures that UI elements can be reused across different modules.
+
+---
+
+## 1.3.1 Component design technique
+
+The system uses the **Atomic Design methodology** to structure the frontend components. This approach allows building complex interfaces from small reusable elements.
+
+The component hierarchy is defined as follows:
+
+- **Atoms:** basic UI elements such as buttons, inputs, labels, icons, loaders, and status badges.  
+- **Molecules:** combinations of atoms, such as login forms, file upload controls, alerts, and progress indicators.  
+- **Organisms:** larger UI sections such as the authentication panel, generator configuration panel, monitoring dashboard, and result display section.  
+- **Templates:** layout structures that define the distribution of components within a page.  
+- **Pages:** complete screens such as Login, Configure Generator, Monitoring, and Result Export.  
+
+---
+
+## 1.3.2 Component design principles
+
+The following principles guide the component design:
+
+- **Reusability:** components are designed to be reused across multiple modules.  
+- **Separation of concerns:** UI components only handle presentation, while logic is handled by hooks and services.  
+- **Consistency:** similar interactions and states are represented uniformly across the application.  
+- **Scalability:** new features can be added without modifying existing components.  
+- **Low coupling:** components do not depend directly on infrastructure or backend details.  
+
+---
+
+## 1.3.3 Component reuse strategy
+
+Components are divided into two main categories:
+
+### Shared components
+Reusable across the entire application:
+
+- `Button`  
+- `Input`  
+- `FileUploader`  
+- `StatusBadge`  
+- `Modal`  
+- `ProgressBar`  
+- `AlertMessage`  
+- `Loader`  
+
+### Feature components
+Specific to functional modules:
+
+- **Auth module:** login form, token validation  
+- **Generator module:** template upload, document upload, configuration panel  
+- **Monitoring module:** process status, stages visualization  
+- **Result module:** generated report view, confidence indicators, export options  
+
+This structure avoids duplication and ensures consistency across all system views.
+
+---
+
+## 1.3.4 Style centralization
+
+CSS styles are centralized to ensure consistency and maintainability:
+
+- A **single CSS file per component type** is used.  
+- Global variables define:
+  - colors  
+  - typography  
+  - spacing  
+  - border radius  
+
+A naming convention is applied:
+
+``` ComponentName-StyleName ```
+
+Examples:
+
+- `Button-Primary`  
+- `Button-Secondary`  
+- `StatusBadge-Warning`  
+- `Input-Error`  
+
+---
+
+## 1.3.5 Branding
+
+Branding is centrally defined to maintain a consistent visual identity:
+
+- primary and secondary colors  
+- semantic colors (success, warning, error)  
+- typography  
+- icons  
+- visual feedback rules  
+
+In DUA Streamliner, branding is also functional, since visual indicators are used to represent:
+
+- high confidence (green)  
+- medium confidence (yellow)  
+- requires review (red)  
+
+---
+
+## 1.3.6 Responsiveness
+
+Responsiveness is handled by:
+
+- using **only "em" units** for layout and spacing  
+- flexible layouts (flex/grid)  
+- adaptable component structures  
+
+Although the system is mainly desktop-oriented, it supports:
+
+- laptops  
+- different screen resolutions  
+- tablet-like environments  
+
+---
+
+## 1.3.7 Internationalization
+
+All components support **react-i18next (v16.5.8)** for internationalization.
+
+This includes:
+
+- externalized text resources  
+- dynamic language switching capability  
+- separation between UI logic and displayed text  
+
+---
+
+## 1.3.8 Accessibility considerations
+
+There are **no explicit accessibility requirements defined** for this project.  
+However, basic usability practices are considered, such as clear labels, visible states, and understandable error messages.
+
+---
+
+## 1.3.9 Atomic design folder structure
+
+The project structure reflects the Atomic Design approach:
+
+```
+src/
+  components/
+    atoms/
+    molecules/
+    organisms/
+    templates/
+    pages/
+```
+---
+
+## Conclusion
+
+The component design strategy of DUA Streamliner is based on Atomic Design, centralized styling, reusable components, consistent branding, internationalization support, and responsive layouts. This approach enables a scalable and maintainable frontend aligned with the system requirements.
+
+
+
+
+
