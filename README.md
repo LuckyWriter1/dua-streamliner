@@ -457,6 +457,142 @@ src/
 The component design strategy of DUA Streamliner is based on Atomic Design, centralized styling, reusable components, consistent branding, internationalization support, and responsive layouts. This approach enables a scalable and maintainable frontend aligned with the system requirements.
 
 
+# 1.4 Security
 
+The frontend security of DUA Streamliner is designed to ensure secure access, protect user sessions, and enforce role-based functionality. Given that the system processes sensitive customs information, the security model is based on enterprise-level authentication and controlled access mechanisms.
+
+---
+
+## 1.4.1 Authentication
+
+Authentication is handled using **Azure Entra ID**, providing a secure and centralized identity management solution.
+
+The system implements:
+
+- **Single Sign-On (SSO)** through Azure Entra ID  
+- **Multi-Factor Authentication (MFA)** using a mobile authenticator application only  
+
+The frontend does not manage user credentials directly. Instead, authentication is delegated to Azure Entra ID, reducing exposure to credential-related vulnerabilities.
+
+**Identity server:**  
+- `customsidentityserver`
+
+---
+
+## 1.4.2 Authorization
+
+Authorization is implemented using **Role-Based Access Control (RBAC)**.
+
+The system defines the following roles:
+
+### Manager
+- **Permission Code:** MANAGE_USERS  
+  - Description: Manage user CRUD operations  
+
+- **Permission Code:** VIEW_REPORTS  
+  - Description: Access operational and performance reports  
+
+- **Permission Code:** EDIT_TEMPLATES  
+  - Description: Modify or update DUA templates  
+
+---
+
+### Customs Agent
+- **Permission Code:** LOAD_FILES  
+  - Description: Upload and configure input document folders  
+
+- **Permission Code:** GENERATE_DUA  
+  - Description: Start the AI-based DUA generation process  
+
+- **Permission Code:** DOWNLOAD_DUA  
+  - Description: Download the generated DUA document  
+
+Frontend components and routes validate roles and permissions to restrict access to unauthorized actions.
+
+---
+
+## 1.4.3 Route protection
+
+The application uses protected routes to enforce access control:
+
+- **Public routes:**
+  - `/login`
+
+- **Private routes:**
+  - `/generator`
+  - `/monitoring`
+  - `/result`
+
+Access to private routes requires a valid authenticated session. Unauthorized users are redirected to the login page.
+
+---
+
+## 1.4.4 Session management
+
+Session handling is managed centrally and includes:
+
+- authentication token validation  
+- session expiration handling  
+- automatic logout when the session expires  
+- manual logout by the user  
+- redirection to login when the session is invalid  
+
+This ensures that protected resources are not accessible without a valid session.
+
+---
+
+## 1.4.5 Security structure
+
+The frontend security logic is organized as follows:
+
+```
+src/
+security/
+AuthService.ts
+SessionManager.ts
+PermissionService.ts
+ProtectedRoute.tsx
+RoleGuard.tsx
+hooks/
+useAuth.ts
+usePermissions.ts
+
+```
+
+- **AuthService:** handles authentication with Azure Entra ID  
+- **SessionManager:** manages session lifecycle and token validation  
+- **PermissionService:** evaluates roles and permissions  
+- **ProtectedRoute:** restricts access to authenticated routes  
+- **RoleGuard:** enforces role-based access control in components  
+
+---
+
+## 1.4.6 Secure configuration
+
+Sensitive configuration is managed using **Azure Key Vault**, which stores:
+
+- environment variables  
+- API keys  
+- sensitive configuration data  
+
+This prevents exposing secrets in the frontend codebase.
+
+---
+
+## 1.4.7 Input validation
+
+All user inputs are validated before processing:
+
+- file type validation (PDF, Word, Excel, images)  
+- required field validation  
+- input sanitization  
+
+This reduces invalid data and improves system security.
+
+---
+
+## Conclusion
+
+The frontend security design of DUA Streamliner integrates Azure Entra ID authentication, role-based authorization, protected navigation, secure session management, and centralized security services. The structure clearly defines responsibilities through dedicated classes and project organization, ensuring a secure, scalable, and maintainable frontend architecture.
 
 
