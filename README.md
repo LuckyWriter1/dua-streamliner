@@ -808,4 +808,27 @@ The frontend is deployed using:
 
 The layered design of DUA Streamliner integrates SSR, modular frontend architecture, and cloud-based configuration. Each layer has a clear responsibility and interacts with others in a controlled manner, ensuring a robust, scalable, and maintainable frontend system aligned with enterprise practices.
 
+## 1.6 Design patterns
 
+Maps which OOP design patterns are applied, where exactly they live in the project structure, and why they are placed there. Each entry targets a specific concern: security, UI reactivity, async operations, session handling, API communication, and object creation.
+
+| Location in Design | Pattern | Explanation | Reason |
+|---|---|---|---|
+| **§1.3.3 — Shared components** — `src/components/atoms/`, `molecules/`, `organisms/` | **Composite** | Atoms compose into molecules, molecules into organisms, organisms into templates and pages. | §1.3.3 defines the full Atomic Design hierarchy; components are built and reused recursively across all modules. |
+| **§1.3.5 — Branding** — `src/styles/branding.ts` | **Singleton** | Single shared object exposing colors, typography, semantic colors, and confidence indicators (green/yellow/red). | Branding values must be globally consistent; a single source prevents divergence across atoms and molecules. |
+| **§1.3.7 — Internationalization** — `src/i18n/` | **Strategy** | `i18next` resolves text resources via interchangeable language strategies; switching locale injects a different resource bundle. | Allows dynamic language switching without modifying any component, as defined in §1.3.7. |
+| **§1.4.5** — `src/security/AuthService.ts` | **Singleton** | Single shared instance managing the Azure Entra ID authentication lifecycle. | Auth state must be globally consistent; multiple instances would cause parallel invalid sessions. |
+| **§1.4.5** — `src/security/SessionManager.ts` | **Singleton** | Single instance controlling token validation, expiration, and session invalidation. | Session state must have one source of truth across all layers. |
+| **§1.4.5** — `src/security/PermissionService.ts` | **Singleton** | Single instance resolving RBAC roles and permissions from the active session token. | Role resolution must be deterministic and shared across `ProtectedRoute` and `RoleGuard`. |
+| **§1.4.5** — `src/security/ProtectedRoute.tsx` | **Proxy** | Intercepts route access and delegates to `AuthService` before rendering the target page. | Enforces access control at the routing boundary without modifying any page component. |
+| **§1.4.5** — `src/security/RoleGuard.tsx` | **Decorator** | Wraps components and conditionally renders them based on the resolved role from `PermissionService`. | Applies RBAC as a cross-cutting concern at component level. |
+| **§1.4.5** — `src/security/hooks/useAuth.ts` | **Template Method** | Defines the skeleton for auth-related async operations (loading → execute → success/error). | Standardizes the auth flow across hooks without duplicating error-handling logic. |
+| **§1.5.2 — Hooks Layer** — `src/hooks/` | **Template Method** | Base hook (`useAsyncOperation`) defines loading → execute → success/error; specific hooks override the execution step. | Avoids duplicated async/loading/error logic across `useGeneration`, `useExport`, `useMonitoring`. |
+| **§1.5.2 — Services Layer** — `src/services/DuaGenerationService.ts` | **Facade** | Single entry point coordinating upload, generation trigger, polling, and export. | Reduces coupling between the Hooks Layer and the multi-step backend workflow. |
+| **§1.5.3 — ApiClients Layer** — `src/api/ApiClientFactory.ts` | **Factory Method** | Instantiates the correct API client (auth, generation, monitoring, export) based on context. | Centralizes client creation; allows mock injection in tests without modifying consumers. |
+| **§1.5.3 — ApiClients Layer** — `src/api/` | **Adapter** | Each `ApiClient` class normalizes external API responses into internal `Model` types. | Decouples the rest of the app from backend contract changes; only the adapter changes on API updates. |
+| **§1.5.3 — Settings Layer** — `src/settings/SettingsProvider.ts` | **Proxy** | Lazily fetches secrets from Azure Key Vault and caches them until expiration. | Isolates all Key Vault access in one place; prevents repeated secret calls per component. |
+| **§1.5.4 — State Management Layer** — `src/state/` | **Facade** | Exposes a unified API over the underlying state store (auth, job status, results). | Keeps the Hooks Layer thin; hides state management internals from components and services. |
+| **§1.5.4 — State Management Layer** — `src/state/` | **Observer** | Components subscribe to state slices; changes propagate reactively across the UI. | Required for live UI refresh during §1.2-C monitoring (job progress, stage transitions). |
+| **§1.5.4 — Notification Service Layer** — `src/services/NotificationService.ts` | **Observer** | Consumers register callbacks; the service dispatches async events (job completed, error, warning). | Directly implements the callback-based async communication model defined in §1.5.4. |
+| **§1.5.4 — Data Validation Layer** — `src/validation/` | **Strategy** | `FileValidationStrategy` is interchangeable per file type (PDF, Word, Excel, image). | Allows adding new supported formats by injecting a new strategy, consistent with §1.4.7 input validation rules. |
