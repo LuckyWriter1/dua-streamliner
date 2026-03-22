@@ -1,7 +1,0 @@
-{
-  "login": { "title": "Iniciar Sesión", "submit": "Ingresar", "tokenLabel": "Token de un solo uso" },
-  "generator": { "title": "Configurar Generador", "start": "Iniciar Generación" },
-  "monitoring": { "title": "Progreso del Proceso" },
-  "result": { "title": "Reporte Generado", "export": "Descargar DUA" },
-  "logout": { "confirm": "Sesión cerrada correctamente." }
-}

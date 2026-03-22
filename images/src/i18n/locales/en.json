@@ -1,7 +1,0 @@
-{
-  "login": { "title": "Sign In", "submit": "Login", "tokenLabel": "One-time token" },
-  "generator": { "title": "Configure Generator", "start": "Start Generation" },
-  "monitoring": { "title": "Monitoring Progress" },
-  "result": { "title": "Generated Report", "export": "Download DUA" },
-  "logout": { "confirm": "You have been logged out." }
-}
