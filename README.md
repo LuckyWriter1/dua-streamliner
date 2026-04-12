@@ -832,3 +832,483 @@ Maps which OOP design patterns are applied, where exactly they live in the proje
 | **§1.5.4 — State Management Layer** — `src/state/` | **Observer** | Components subscribe to state slices; changes propagate reactively across the UI. | Required for live UI refresh during §1.2-C monitoring (job progress, stage transitions). |
 | **§1.5.4 — Notification Service Layer** — `src/services/NotificationService.ts` | **Observer** | Consumers register callbacks; the service dispatches async events (job completed, error, warning). | Directly implements the callback-based async communication model defined in §1.5.4. |
 | **§1.5.4 — Data Validation Layer** — `src/validation/` | **Strategy** | `FileValidationStrategy` is interchangeable per file type (PDF, Word, Excel, image). | Allows adding new supported formats by injecting a new strategy, consistent with §1.4.7 input validation rules. |
+
+# 2. Backend Design
+
+## 2.1 Technology Stack
+
+- **Architecture style:** Modular monolith with internal services
+- **Application type:** REST API
+- **Communication protocol:** HTTPS
+- **API standard:** OpenAPI (Swagger)
+- **API gateway:** Azure API Management
+- **Hosting:** Azure App Service
+- **Asynchronous operations and notifications:** Azure Notification Hubs
+- **Load balancer:** Not required
+- **Coding language:** C# with .NET and ASP.NET Core
+- **Repository structure:** Monorepo — backend located in the `duabusiness` folder
+- **Environments:** Development, Stage, Production
+
+## 2.2 Security
+
+The backend security of DUA Streamliner is designed in synchrony with the frontend security model defined in §1.4, extending it with transport, data, and API-level controls.
+
+---
+
+### 2.2.1 Transport Security
+
+All communication between clients and the backend is enforced over **HTTPS**.  
+HTTP requests are rejected at the Azure API Management gateway level.  
+TLS version enforced: **TLS 1.2 minimum**.
+
+---
+
+### 2.2.2 Session and Token Lifetime
+
+JWT tokens issued by Azure Entra ID are configured with the following lifetime policy, aligned with the session management behavior defined in the frontend `SessionManager.ts` (§1.4.5):
+
+| Token Type | Lifetime |
+|---|---|
+| Access token | **1 hour** |
+| Refresh token | **8 hours** |
+| MFA session | **8 hours** |
+
+Access tokens expire after 1 hour. The frontend `SessionManager.ts` detects expiration and uses the refresh token to obtain a new access token transparently. If the refresh token is also expired, the user is redirected to the login screen and required to authenticate again.
+
+---
+
+### 2.2.3 Authentication and Authorization
+
+Authentication and authorization are delegated to **Azure Entra ID**, consistent with the frontend security model (§1.4.1 and §1.4.2).
+
+The backend validates **Bearer tokens (JWT)** issued by Azure Entra ID on every protected request.  
+Role claims embedded in the token are evaluated server-side to enforce RBAC permissions:
+
+| Role | Permission Codes |
+|---|---|
+| Manager | `MANAGE_USERS`, `VIEW_REPORTS`, `EDIT_TEMPLATES` |
+| Customs Agent | `LOAD_FILES`, `GENERATE_DUA`, `DOWNLOAD_DUA` |
+
+---
+
+### 2.2.4 Database Encryption
+
+Data at rest is protected using **AES-256** encryption through **Azure SQL Transparent Data Encryption (TDE)**, enabled by default on all environments.
+
+Sensitive fields (user identity references, session metadata) are additionally protected using **Always Encrypted** at the column level.
+
+---
+
+### 2.2.5 Payload Size Limits
+
+A general request payload limit is enforced at the API gateway level.  
+File upload endpoints apply a separate, higher limit to support customs source documents (PDFs, Word, Excel, scanned images).
+
+| Scope | Limit |
+|---|---|
+| General API requests | **10 MB** |
+| File upload endpoints (`/upload`, `/template`) | **100 MB** |
+
+> File uploads are not received as raw request body by the API. The client uploads files directly to **Azure Blob Storage** using a **SAS token** (Shared Access Signature) issued by the backend. The API only receives the resulting Blob Storage reference, keeping App Service memory unaffected by file size.
+
+These limits are enforced at both the **Azure API Management** policy level and the **ASP.NET Core** request pipeline.
+
+---
+
+### 2.2.6 Rate Limiting
+
+Rate limiting is applied at the **Azure API Management** gateway to protect against abuse while supporting the semi-open access model of the system.
+
+| Scope | Limit |
+|---|---|
+| Authenticated requests per user | **200 requests / minute** |
+| Unauthenticated requests (login endpoint) | **10 requests / minute** |
+| Maximum concurrent connections | **500** |
+
+Requests exceeding these limits receive an **HTTP 429 Too Many Requests** response.
+
+---
+
+### 2.2.7 Data Retention and Archiving
+
+Data retention follows the obligations established by the **Ley General de Aduanas de Costa Rica (Ley 7557)**, which mandates preserving customs documentation for a minimum of **5 years**.
+
+| Stage | Period | Storage |
+|---|---|---|
+| Active (Production) | **0 – 2 years** | Azure SQL (hot tier) |
+| Archive | **2 – 5 years** | Azure Blob Storage (cool tier) |
+| Deletion | **After 5 years** | Permanent deletion with audit log entry |
+
+Archiving is triggered automatically by a scheduled background job that evaluates record age against the retention policy.  
+Archived records remain accessible on demand but are no longer served from the primary database.
+
+---
+
+### 2.2.8 Input Validation
+
+All incoming payloads are validated server-side regardless of frontend validation:
+
+- file type validation (PDF, Word, Excel, images)
+- file content inspection (MIME type verification beyond extension)
+- required field enforcement via model binding and data annotations
+- payload schema validation before processing begins
+
+---
+
+### Conclusion
+
+The backend security design of DUA Streamliner enforces HTTPS transport, AES-256 database encryption, JWT-based authentication aligned with the frontend model, payload and rate limiting controls, and a legally compliant data retention policy based on Costa Rican customs law. All controls operate in coordination with Azure API Management, Azure Entra ID, and Azure Key Vault.
+
+## 2.3 Observability
+
+The backend observability strategy is designed in synchrony with the frontend observability model defined in §1.1, where Azure Application Insights SDK is already integrated. Both layers feed into a unified monitoring platform.
+
+---
+
+### 2.3.1 Observability Platform
+
+| Component | Tool |
+|---|---|
+| Telemetry collection (frontend) | Azure Application Insights SDK |
+| Telemetry collection (backend) | Azure Application Insights SDK |
+| Centralized monitoring platform | Azure Monitor |
+| Dashboard and analysis tool | Azure Monitor Workbooks |
+
+All telemetry from both frontend and backend is centralized in **Azure Monitor**, enabling unified visibility across the full system without additional infrastructure or cost.
+
+---
+
+### 2.3.2 Registered Events
+
+#### Security Events
+
+| Event | Description |
+|---|---|
+| `auth.login.success` | User successfully authenticated |
+| `auth.login.failure` | Failed authentication attempt |
+| `auth.mfa.failure` | MFA token invalid or expired |
+| `auth.session.expired` | User session expired |
+| `auth.access.unauthorized` | Request rejected with HTTP 403 |
+| `auth.token.invalid` | Bearer token validation failed |
+
+---
+
+#### File Ingestion Events
+
+| Event | Description |
+|---|---|
+| `file.upload.success` | Source document uploaded successfully |
+| `file.upload.failed` | Upload rejected due to type, size, or format violation |
+| `file.ocr.started` | OCR processing initiated on a scanned document |
+| `file.ocr.completed` | OCR processing finished successfully |
+| `file.ocr.failed` | OCR processing failed |
+
+---
+
+#### DUA Generation Events
+
+| Event | Description |
+|---|---|
+| `dua.generation.started` | AI-based generation job initiated |
+| `dua.generation.completed` | Generation job finished successfully |
+| `dua.generation.failed` | Generation job terminated with error |
+| `dua.field.low_confidence` | A generated field was flagged for manual review |
+
+---
+
+#### Export Events
+
+| Event | Description |
+|---|---|
+| `export.requested` | User requested the final report export |
+| `export.completed` | Report exported and made available for download |
+| `export.failed` | Export process failed |
+
+---
+
+#### User Activity Events
+
+| Event | Description |
+|---|---|
+| `report.viewed` | Generated report accessed by a user |
+| `template.modified` | DUA template updated by a Manager role user |
+
+---
+
+#### Performance Events
+
+| Event | Description |
+|---|---|
+| `perf.api.slow_request` | API response time exceeded **2000 ms** threshold |
+| `perf.file.slow_processing` | File processing time exceeded **30 seconds** threshold (OCR + AI extraction baseline) |
+
+---
+
+#### System Events
+
+| Event | Description |
+|---|---|
+| `system.rate_limit.exceeded` | Request rejected with HTTP 429 |
+| `system.exception.unhandled` | Unhandled exception caught by global error handler |
+| `system.archive.job.executed` | Background data archiving job completed |
+
+---
+
+### 2.3.3 Dashboard Analysis
+
+Dashboards are built using **Azure Monitor Workbooks** and organized by audience and purpose:
+
+| Dashboard | Target Role | Content |
+|---|---|---|
+| Security Overview | Manager | Login attempts, MFA failures, unauthorized access, token errors |
+| Operational Activity | Manager | Report views, template modifications, active users |
+| Generation Performance | Manager / Customs Agent | Job success rate, low confidence field frequency, processing times |
+| System Health | Manager | Slow requests, unhandled exceptions, rate limit events, archive jobs |
+
+---
+
+### Conclusion
+
+The observability design of DUA Streamliner centralizes telemetry from both frontend and backend into Azure Monitor using Application Insights SDK. Registered events cover security, file ingestion, DUA generation, export, user activity, performance, and system health. Azure Monitor Workbooks provides unified dashboards aligned with the roles and responsibilities defined in §2.2.2.
+
+## 2.4 Infrastructure (DevOps)
+
+The infrastructure and DevOps strategy of DUA Streamliner is unified across frontend and backend within the same monorepo, using a consistent toolchain aligned with the Azure ecosystem.
+
+---
+
+### 2.4.1 Source Control
+
+| Property | Value |
+|---|---|
+| Repository type | Monorepo |
+| Source control service | Azure DevOps Repositories |
+| Frontend folder | `duastreamliner` |
+| Backend folder | `duabusiness` |
+
+> The frontend (Node.js 21 SSR) and backend (ASP.NET Core) are deployed to **separate Azure App Service instances**. Although they share the same monorepo, each layer has its own App Service plan, independent deployment pipeline, and isolated runtime environment.
+
+| Layer | Runtime | App Service Instance |
+|---|---|---|
+| Frontend | Node.js 21 | `dua-streamliner-frontend` |
+| Backend | ASP.NET Core | `dua-streamliner-backend` |
+
+---
+
+### 2.4.2 CI/CD Pipelines
+
+All automated pipeline actions are handled by **Azure DevOps Pipelines**, consistent with the frontend pipeline strategy defined in §1.1.
+
+A unified pipeline configuration is maintained at the monorepo root level, with separate pipeline definitions per layer:
+
+| Pipeline | Scope |
+|---|---|
+| `frontend-pipeline.yml` | Frontend build, test, and deployment |
+| `backend-pipeline.yml` | Backend build, test, and deployment |
+| `infra-pipeline.yml` | Infrastructure provisioning via Bicep — triggered only on changes to the `infra/` folder, not on every push |
+
+#### Pipeline Stages per Environment
+
+Each pipeline executes the following stages in order:
+
+| Stage | Description |
+|---|---|
+| Build | Compile and package the application |
+| Test | Execute unit and integration tests |
+| Validate | Run code quality and security checks |
+| Deploy | Push to the target environment |
+
+---
+
+### 2.4.3 Infrastructure as Code
+
+Infrastructure provisioning is handled using **Azure Bicep**, the native Infrastructure as Code language for Azure Resource Manager.
+
+Bicep was selected over Terraform because the entire infrastructure is Azure-native, eliminating the need for a remote state file or a multi-cloud abstraction layer.
+
+#### Provisioned Resources per Environment
+
+| Resource | Purpose |
+|---|---|
+| Azure App Service | Host frontend and backend applications |
+| Azure API Management | API gateway and rate limiting enforcement |
+| Azure SQL Database | Primary relational data store |
+| Azure Blob Storage | File upload storage and document archiving |
+| Azure Key Vault | Secrets, API keys, and environment configuration |
+| Azure Notification Hubs | Asynchronous operation notifications |
+| Azure Application Insights | Telemetry collection for observability |
+
+Bicep templates are located in the monorepo under:
+
+```
+infra/
+  main.bicep
+  modules/
+    appservice.bicep
+    apim.bicep
+    sql.bicep
+    storage.bicep
+    keyvault.bicep
+    notificationhubs.bicep
+    insights.bicep
+```
+
+---
+
+### 2.4.4 Environments and Deployment
+
+Deployments target three isolated environments managed through **Azure DevOps Environments**:
+
+| Environment | Purpose | Deployment Trigger |
+|---|---|---|
+| Development | Active development and integration testing | Push to `develop` branch |
+| Stage | Pre-production validation and QA | Push to `release/*` branch |
+| Production | Live system | Approved merge to `main` branch |
+
+Production deployments require a **manual approval gate** before execution.
+
+---
+
+### 2.4.5 Automation Hooks
+
+**Husky** (v9.1.7) is configured at the monorepo root to enforce pre-commit and pre-push validations:
+
+| Hook | Action |
+|---|---|
+| `pre-commit` | Run Prettier and ESLint on staged files |
+| `pre-push` | Run unit tests before pushing to remote |
+
+---
+
+### Conclusion
+
+The DevOps infrastructure of DUA Streamliner uses Azure DevOps Pipelines for unified CI/CD across the monorepo, Azure Bicep for native Azure infrastructure provisioning, and three isolated environments with controlled promotion gates. This approach ensures consistency between frontend and backend delivery pipelines while keeping the entire toolchain within the Azure ecosystem.
+
+## 2.5 Availability
+
+### 2.5.1 Availability Target
+
+The system targets **99.99% annual uptime**, which corresponds to a maximum allowable downtime of approximately **52 minutes per year**.
+
+| Uptime Target | Max Downtime per Year |
+|---|---|
+| 99.99% | ~52 minutes |
+
+---
+
+### 2.5.2 Recovery Objectives
+
+The following recovery objectives apply to the critical path of the system:
+
+| Objective | Target |
+|---|---|
+| **RTO** (Recovery Time Objective) | ≤ 5 minutes |
+| **RPO** (Recovery Point Objective) | ≤ 1 minute |
+
+RTO defines the maximum acceptable time the system can be offline after a failure.  
+RPO defines the maximum acceptable amount of data loss measured in time.
+
+---
+
+### 2.5.3 Single Points of Failure and Native SLAs
+
+The following table lists every infrastructure component in the system stack, its native Azure SLA, and whether it meets the 99.99% target by default.
+
+| Component | Native Azure SLA | Meets 99.99% |
+|---|---|---|
+| Azure App Service | 99.95% | ❌ |
+| Azure API Management (Standard tier) | 99.95% | ❌ |
+| Azure API Management (Premium tier) | 99.99% | ✅ |
+| Azure SQL Database | 99.99% | ✅ |
+| Azure Blob Storage | 99.9% | ❌ |
+| Azure Key Vault | 99.99% | ✅ |
+| Azure Notification Hubs | 99.9% | ❌ |
+| Azure Application Insights | 99.9% | ❌ |
+| Azure Entra ID | 99.99% | ✅ |
+
+---
+
+### 2.5.4 Recovery Strategy for Components Below Target
+
+Components that do not natively meet the 99.99% SLA require explicit recovery or redundancy configurations.
+
+---
+
+#### Azure App Service — Native SLA: 99.95%
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | Availability Zone redundancy enabled on the App Service Plan |
+| Recovery strategy | Auto-heal enabled with automatic instance restart on failure |
+| Health monitoring | Health check probes configured to detect and replace unresponsive instances automatically |
+| RTO contribution | Instance replacement completes within 2–3 minutes under zone failure |
+| Effect | Distributes instances across multiple availability zones; failed instances are detected and replaced without manual intervention |
+
+---
+
+#### Azure API Management — Native SLA: 99.95% (Standard tier)
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | Upgrade to **Premium tier** with availability zone support |
+| Recovery strategy | Automatic failover between zones managed by Azure |
+| Backup strategy | Automated daily APIM configuration backup to Azure Blob Storage; restore executable within RTO window |
+| Effect | Premium tier with availability zones reaches 99.99% SLA; configuration backup prevents data loss on corruption or accidental deletion |
+
+---
+
+#### Azure Blob Storage — Native SLA: 99.9%
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | **Zone-Redundant Storage (ZRS)** — synchronous replication across three availability zones |
+| Recovery strategy | **Soft delete** enabled with a 14-day retention window for accidental deletion recovery |
+| Versioning | **Blob versioning** enabled to allow point-in-time restoration of corrupted or overwritten files |
+| Effect | ZRS eliminates single-zone failure risk; soft delete and versioning cover accidental data loss scenarios beyond infrastructure failure |
+
+---
+
+#### Azure SQL Database — Native SLA: 99.99%
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | Natively zone-redundant via Azure SQL built-in high availability |
+| Backup strategy | **Automated backups** enabled — full backup weekly, differential daily, transaction log every 5–12 minutes |
+| Point-in-time restore | Restore to any point within the last **35 days** |
+| Long-term retention | Backup retention extended to **5 years** via Azure SQL Long-Term Retention (LTR) policy, aligned with the legal obligation defined in §2.2.6 |
+| Effect | Covers both infrastructure failure (zone redundancy) and data loss scenarios (accidental deletion, corruption), with full compliance with Costa Rican customs law retention requirements |
+
+---
+
+#### Azure Notification Hubs — Native SLA: 99.9%
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | Not applicable — non-critical async component |
+| Recovery strategy | **Retry logic with exponential backoff** implemented in `NotificationService.ts` |
+| Dead letter handling | Failed notifications that exhaust all retry attempts are written to a **dead letter queue** in Azure Blob Storage for manual review and reprocessing |
+| Effect | Transient failures are retried automatically; persistent failures are captured without data loss; Notification Hubs downtime does not block core DUA generation or export functionality |
+
+---
+
+#### Azure Application Insights — Native SLA: 99.9%
+
+| Property | Configuration |
+|---|---|
+| Redundancy strategy | Not applicable — observability component only |
+| Recovery strategy | **Local telemetry buffering** via Application Insights SDK offline storage; telemetry is flushed automatically when the service recovers |
+| Effect | No telemetry data is lost during short outages; Application Insights downtime has zero impact on system availability for end users |
+
+---
+
+### 2.5.5 Composite Availability
+
+With the recovery strategies applied, the composite availability of the critical path (App Service + API Management Premium + SQL Database + Blob Storage ZRS + Key Vault + Entra ID) meets the 99.99% annual uptime target.
+
+Non-critical components (Notification Hubs, Application Insights) are excluded from the composite SLA calculation as their downtime does not interrupt core system functionality.
+
+---
+
+### Conclusion
+
+The availability design of DUA Streamliner targets 99.99% annual uptime with an RTO of 5 minutes and an RPO of 1 minute. Components that do not meet this target natively are addressed through availability zone redundancy, tier upgrades, ZRS storage, automated configuration backups, soft delete with versioning, retry strategies with dead letter queuing, and local telemetry buffering. Critical path components collectively meet the availability target after applying these configurations.
