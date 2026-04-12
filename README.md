@@ -1312,3 +1312,122 @@ Non-critical components (Notification Hubs, Application Insights) are excluded f
 ### Conclusion
 
 The availability design of DUA Streamliner targets 99.99% annual uptime with an RTO of 5 minutes and an RPO of 1 minute. Components that do not meet this target natively are addressed through availability zone redundancy, tier upgrades, ZRS storage, automated configuration backups, soft delete with versioning, retry strategies with dead letter queuing, and local telemetry buffering. Critical path components collectively meet the availability target after applying these configurations.
+
+---
+
+2.6 Scalability
+
+The scalability strategy of DUA Streamliner focuses on ensuring that the system can handle increasing workloads, particularly in scenarios involving large file uploads, intensive OCR processing, and AI-based data extraction.
+
+
+---
+2.6.1 Scaling Drivers
+
+The system must scale based on the following factors:
+
+Number of concurrent users
+Number of DUA generation requests per minute
+Volume and size of uploaded files
+Processing complexity (OCR + semantic extraction)
+Number of simultaneous long-running jobs
+
+---
+
+2.6.2 Scalable Components
+
+The following components are designed to scale as demand increases:
+
+Component	Scaling Strategy
+Azure App Service (Backend)	Horizontal scaling (scale-out instances)
+Azure App Service (Frontend)	Horizontal scaling (scale-out instances)
+Azure API Management	Scales automatically based on request load
+Azure Blob Storage	Auto-scalable by design (no manual scaling required)
+Azure SQL Database	Vertical scaling (compute tier adjustment)
+Azure Notification Hubs	Auto-scalable for message throughput
+
+---
+
+2.6.3 Horizontal Scaling (Compute Layer)
+
+The backend and frontend services are deployed in Azure App Service with auto-scaling rules based on:
+
+CPU usage
+Memory consumption
+Request count per instance
+
+When thresholds are exceeded, additional instances are created automatically to distribute the load.
+
+---
+
+2.6.4 Asynchronous Processing Strategy
+
+DUA generation is a long-running operation that includes:
+
+file ingestion
+OCR processing
+semantic extraction
+mapping to DUA template
+
+To prevent blocking API threads, the system uses an asynchronous processing model:
+
+The backend registers the job request
+The job is processed in background workers
+The frontend monitors progress through polling or notifications
+Results are delivered when processing is complete
+
+This ensures the API remains responsive under high load.
+
+
+---
+
+
+2.6.5 Storage Scalability
+
+File uploads are handled directly by Azure Blob Storage using SAS tokens.
+
+Benefits:
+
+Backend memory is not impacted by large file uploads
+Unlimited storage scalability
+Parallel file upload support
+Optimized throughput for large documents
+
+
+---
+
+2.6.6 Database Scaling
+
+Azure SQL Database supports vertical scaling by increasing:
+
+DTUs or vCores
+Storage capacity
+
+For future growth, the system can implement:
+
+read replicas for reporting workloads
+partitioning strategies for large datasets
+caching layers for frequent queries
+
+
+---
+
+
+2.6.7 Bottlenecks and Mitigation
+
+Potential Bottleneck	Mitigation Strategy
+OCR processing time	Parallel processing of files
+AI extraction latency	Queue-based job execution
+Large file uploads	Direct upload to Blob Storage
+Database contention	Optimized queries and indexing
+API overload	Rate limiting and autoscaling
+
+
+---
+
+
+2.6.8 Scalability Summary
+
+The system uses a combination of horizontal scaling, asynchronous processing, and cloud-native services to ensure high scalability. By offloading heavy operations (file storage and processing) to specialized Azure services, DUA Streamliner maintains performance and responsiveness even under high demand.
+
+
+
