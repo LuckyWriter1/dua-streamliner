@@ -1588,28 +1588,325 @@ Conclusion
 The backend workflows of DUA Streamliner are designed to handle complex document processing in a structured and scalable way. By separating file ingestion, processing, monitoring, and export into independent workflows, the system ensures high reliability, flexibility, and user transparency.
 
 
+2.8 Architecture Diagrams in Layers
+
+DUA Streamliner follows the C4 model to document the system architecture at different abstraction levels.  
+For this project, the selected diagrams are:
+
+- Context Diagram
+- Container Diagram
+- Code Diagram
+
+The Components Diagram is intentionally excluded, as defined in the project scope.
+
+These diagrams allow the architecture to be described progressively, from the external ecosystem to the internal code organization of the backend.
+
+---
+
+2.8.1 Context Diagram
+
+Purpose
+
+The Context Diagram shows DUA Streamliner as a whole system and its relationship with the main external actors and external platforms.
+
+Main elements to include
+
+Person: Customs Agent
+- Uses the system to upload source documents, monitor processing, and download the generated DUA.
+
+Person: Manager
+- Uses the system to manage templates, review reports, and supervise system usage.
+
+System: DUA Streamliner
+- Reads source documents, extracts customs information, maps it to the official template, and generates the pre-filled DUA.
+
+External System: Azure Entra ID
+- Provides authentication, MFA, and role-based identity validation.
+
+External Platform: Azure Blob Storage
+- Stores uploaded files, generated documents, and archived records.
+
+External Platform: Azure Notification Hubs
+- Delivers asynchronous notifications related to processing progress and completion.
+
+External Platform: Azure Monitor / Application Insights
+- Receives telemetry, logs, exceptions, and performance metrics.
+
+External Reference: Official DUA Template
+- Template used by the system to generate the final .docx document.
+
+Context Diagram Explanation
+
+At the highest level, DUA Streamliner is the central system used by Customs Agents and Managers.  
+Users authenticate through Azure Entra ID before accessing protected operations.  
+Source files and generated documents are stored in Azure Blob Storage.  
+Long-running processes communicate status changes through Azure Notification Hubs.  
+Operational telemetry is sent to Azure Monitor through Application Insights.  
+The system uses the official DUA template as the structural basis for the generated output.
+
+Suggested title for the diagram
+
+C4 – System Context Diagram – DUA Streamliner
+
+---
+
+2.8.2 Container Diagram
+
+Purpose
+
+The Container Diagram shows the main deployable units inside DUA Streamliner and how they interact with each other and with external services.
+
+Main containers to include
+
+Container: Frontend Web Application
+Technology:
+- React 19.2
+- TypeScript 5.9.3
+- Node.js 21 SSR
+- Azure App Service
+
+Responsibilities:
+- User authentication flow
+- File upload orchestration
+- Job monitoring
+- Result visualization
+- Export request initiation
+
+Container: Backend REST API
+Technology:
+- ASP.NET Core
+- C#
+- OpenAPI
+- Azure App Service
+
+Responsibilities:
+- Validate requests
+- Issue SAS tokens
+- Register generation jobs
+- Enforce RBAC
+- Expose monitoring and export endpoints
+- Coordinate processing workflows
+
+Container: Background Processing Worker
+Technology:
+- Internal backend service inside the modular monolith
+
+Responsibilities:
+- Read pending jobs
+- Retrieve files from Blob Storage
+- Execute OCR and semantic extraction
+- Apply validation rules
+- Map extracted data to the DUA structure
+- Update job status
+
+Container: Azure SQL Database
+Responsibilities:
+- Store users metadata references
+- Store job records
+- Store job status
+- Store template versions
+- Store audit and process metadata
+
+Container: Azure Blob Storage
+Responsibilities:
+- Store uploaded source files
+- Store generated .docx files
+- Store archived records
+
+Container: Azure API Management
+Responsibilities:
+- API gateway
+- HTTPS enforcement
+- payload limits
+- rate limiting
+- request routing
+
+External Services connected to the containers
+
+- Azure Entra ID
+- Azure Notification Hubs
+- Azure Key Vault
+- Azure Monitor / Application Insights
+
+Container Diagram Explanation
+
+The user interacts with the Frontend Web Application.  
+The frontend authenticates through Azure Entra ID and communicates with the Backend REST API through Azure API Management.  
+The backend issues secure SAS tokens so the frontend can upload documents directly to Azure Blob Storage.  
+Once the upload is completed, the backend registers a generation job in Azure SQL Database.  
+A Background Processing Worker reads pending jobs, retrieves files from Blob Storage, executes OCR and semantic extraction, validates results, and updates job progress in the database.  
+The backend exposes endpoints for progress tracking and document export.  
+Notifications may be sent through Azure Notification Hubs, and logs and metrics are sent to Azure Monitor / Application Insights.  
+Sensitive configuration is retrieved from Azure Key Vault.
+
+Suggested title for the diagram
+
+C4 – Container Diagram – DUA Streamliner
+
+---
+
+2.8.3 Code Diagram
+
+Purpose
+
+The Code Diagram describes the internal structure of the backend code, focusing on the main folders, classes, and responsibilities inside the modular monolith.
+
+Because the project scope explicitly excludes the C4 Components Diagram, this Code Diagram is used to represent the internal code organization directly.
+
+Main backend code structure
+
+duabusiness/
+  src/
+    Controllers/
+    Services/
+    Workers/
+    Models/
+    Validation/
+    Security/
+    Repositories/
+    Notifications/
+    Observability/
+    Configuration/
+
+Code-level elements to include
+
+Controllers Layer
+Purpose:
+- Expose REST endpoints
+- Receive and validate requests
+- Delegate actions to services
+
+Suggested classes:
+- AuthController
+- UploadController
+- GenerationController
+- MonitoringController
+- ExportController
+- TemplateController
+
+Services Layer
+Purpose:
+- Contain application and business logic
+- Coordinate workflow execution
+
+Suggested classes:
+- SasTokenService
+- JobRegistrationService
+- DuaGenerationService
+- TemplateService
+- ExportService
+- MonitoringService
+
+Workers Layer
+Purpose:
+- Execute asynchronous and long-running jobs
+
+Suggested classes:
+- JobProcessorWorker
+- OcrProcessingWorker
+- SemanticExtractionWorker
+- ArchivePolicyWorker
+
+Models Layer
+Purpose:
+- Define business entities and DTOs
+
+Suggested classes:
+- GenerationJob
+- UploadedFileReference
+- DuaField
+- DuaResult
+- TemplateVersion
+- JobStatusDto
+
+Validation Layer
+Purpose:
+- Validate requests and business rules
+
+Suggested classes:
+- UploadRequestValidator
+- TemplateValidator
+- ExportRequestValidator
+- DuaConsistencyValidator
+
+Security Layer
+Purpose:
+- Handle token validation, RBAC, and backend authorization rules
+
+Suggested classes:
+- TokenValidationService
+- PermissionEvaluator
+- RolePolicyProvider
+
+Repositories Layer
+Purpose:
+- Abstract persistence access
+
+Suggested classes:
+- JobRepository
+- TemplateRepository
+- AuditRepository
+- ResultRepository
+
+Notifications Layer
+Purpose:
+- Publish asynchronous events and user notifications
+
+Suggested classes:
+- NotificationPublisher
+- JobStatusNotifier
+
+Observability Layer
+Purpose:
+- Register logs, metrics, traces, and exceptions
+
+Suggested classes:
+- TelemetryService
+- AuditLogger
+- ExceptionTracker
+
+Configuration Layer
+Purpose:
+- Centralize access to settings and secret references
+
+Suggested classes:
+- KeyVaultSettingsProvider
+- StorageOptions
+- DatabaseOptions
+- NotificationHubOptions
+
+Code Diagram Explanation
+
+The backend code is organized according to responsibility boundaries.  
+Controllers receive HTTP requests and delegate actions to Services.  
+Services orchestrate the business workflows and may use Repositories, Validation classes, Notifications, Security helpers, and Observability services.  
+Workers handle asynchronous processing and update job states independently from synchronous API requests.  
+Models define the internal data contracts, while Configuration centralizes access to infrastructure parameters and secret references.  
+This structure keeps the modular monolith organized, maintainable, and aligned with the layered architecture described in previous sections. :contentReference[oaicite:1]{index=1}
+
+Suggested title for the diagram
+
+C4 – Code Diagram – Backend Modular Structure
+
+---
+
+2.8.4 Relationship with the Layered Design
+
+These diagrams are consistent with the layered architecture already defined in the frontend and backend sections.
+
+- The Context Diagram represents the system boundary and external actors.
+- The Container Diagram represents the deployable runtime units and infrastructure services.
+- The Code Diagram represents the internal backend structure and the main class-level organization.
+
+Together, these views provide a complete architectural understanding without going into unnecessary implementation detail.
+
+Conclusion
+
+The C4-based architectural documentation of DUA Streamliner is composed of Context, Container, and Code diagrams.  
+This selection is sufficient to explain the system from the business interaction level down to the internal backend organization, while remaining aligned with the scope and the architecture decisions already defined in this README.
 
 
 
-flowchart LR
-    CA[Customs Agent]
-    M[Manager]
 
-    DUA[DUA Streamliner]
-
-    ENTRA[Azure Entra ID]
-    BLOB[Azure Blob Storage]
-    NOTIF[Azure Notification Hubs]
-    MONITOR[Azure Monitor / Application Insights]
-    TEMPLATE[Official DUA Template]
-
-    CA -->|Uploads files, monitors jobs, downloads DUA| DUA
-    M -->|Manages templates, reviews reports| DUA
-
-    DUA -->|Authenticates users and validates roles| ENTRA
-    DUA -->|Stores uploaded files, generated documents, archives| BLOB
-    DUA -->|Sends processing notifications| NOTIF
-    DUA -->|Sends logs, metrics, traces| MONITOR
-    DUA -->|Uses template structure to generate final .docx| TEMPLATE
 
 
