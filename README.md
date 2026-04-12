@@ -1430,4 +1430,161 @@ API overload	Rate limiting and autoscaling
 The system uses a combination of horizontal scaling, asynchronous processing, and cloud-native services to ensure high scalability. By offloading heavy operations (file storage and processing) to specialized Azure services, DUA Streamliner maintains performance and responsiveness even under high demand.
 
 
+### 2.7 Backend Key Workflows
+
+This section describes the core backend workflows of DUA Streamliner. Each workflow represents a critical business process and defines how the system behaves from the moment a request is received until the final result is delivered.
+
+All workflows are designed to be asynchronous, scalable, and resilient, following the architecture defined in previous sections.
+
+---
+
+### 2.7.1 Upload Files to Generate DUA
+
+This workflow handles the ingestion of source documents required to generate the DUA.
+
+Steps:
+
+1. The frontend requests a secure upload authorization.
+2. The backend generates a SAS token for Azure Blob Storage.
+3. The frontend uploads files directly to Azure Blob Storage using the SAS token.
+4. The frontend sends a request to the backend with the list of uploaded file references (Blob URLs).
+5. The backend validates:
+   - file types
+   - file sizes
+   - required inputs
+6. The backend registers a new generation job in the database with status = "pending".
+7. The backend returns a jobId to the frontend.
+
+Result:
+The files are securely stored, and the system is ready to start processing.
+
+---
+
+### 2.7.2 DUA Generation Process
+
+This workflow performs the core business logic: OCR, semantic extraction, and mapping.
+
+Steps:
+
+1. A background worker detects a new job with status = "pending".
+2. The job status is updated to "processing".
+3. The system retrieves file references from Azure Blob Storage.
+4. For each file:
+   - If image or scanned PDF → apply OCR
+   - If structured document → extract raw text
+5. Extracted content is processed by AI models to identify:
+   - importer/exporter data
+   - product descriptions
+   - values (FOB/CIF)
+   - incoterms
+   - transport information
+   - invoice details
+6. Extracted data is normalized into internal Models.
+7. The system maps extracted data to the official DUA template structure.
+8. Validation rules are applied:
+   - data consistency
+   - required fields
+   - value calculations
+9. Confidence levels are assigned to each field:
+   - high (green)
+   - medium (yellow)
+   - low (red)
+10. The job status is updated to:
+   - "completed" if successful
+   - "failed" if an error occurs
+11. A notification event is sent via Azure Notification Hubs.
+
+Result:
+A structured DUA representation is generated and stored.
+
+---
+
+### 2.7.3 Monitoring Job Progress
+
+This workflow allows the frontend to track the status of a generation job.
+
+Steps:
+
+1. The frontend sends a request with jobId.
+2. The backend retrieves job status from the database.
+3. The backend returns:
+   - current stage (upload, processing, validation, completed)
+   - progress percentage
+   - warnings or errors (if any)
+4. The frontend updates the UI accordingly.
+
+Optional enhancement:
+Real-time updates can be pushed using Azure Notification Hubs instead of polling.
+
+Result:
+The user has full visibility of the process.
+
+---
+
+### 2.7.4 Export Generated DUA
+
+This workflow handles the generation and download of the final Word document.
+
+Steps:
+
+1. The frontend requests export using jobId.
+2. The backend verifies that the job status is "completed".
+3. The backend retrieves the structured DUA data.
+4. The system loads the official DUA Word template.
+5. Fields are populated with extracted values.
+6. Visual indicators are applied:
+   - green → high confidence
+   - yellow → medium confidence
+   - red → requires review
+7. The final document is generated in .docx format.
+8. The document is stored in Azure Blob Storage.
+9. A secure download URL (SAS token) is generated.
+10. The backend returns the download link to the frontend.
+
+Result:
+The user obtains a fully generated and visually annotated DUA document.
+
+---
+
+### 2.7.5 Setup DUA Template
+
+This workflow allows managers to configure or update the official DUA template.
+
+Steps:
+
+1. The Manager uploads a new template file.
+2. The backend validates:
+   - file format (.docx)
+   - structure compatibility
+3. The template is stored in Azure Blob Storage.
+4. The system registers the template version in the database.
+5. The new template becomes the default for future generation jobs.
+
+Result:
+The system maintains versioned and configurable DUA templates.
+
+---
+
+### 2.7.6 Error Handling Workflow
+
+This workflow ensures resilience and proper error reporting.
+
+Steps:
+
+1. Any failure during processing triggers an exception.
+2. The global exception handler captures the error.
+3. The job status is updated to "failed".
+4. Error details are logged in Azure Application Insights.
+5. A notification is sent to the frontend.
+6. The user is informed and can retry the process.
+
+Result:
+Failures are controlled, traceable, and do not crash the system.
+
+---
+
+Conclusion
+
+The backend workflows of DUA Streamliner are designed to handle complex document processing in a structured and scalable way. By separating file ingestion, processing, monitoring, and export into independent workflows, the system ensures high reliability, flexibility, and user transparency.
+
 
