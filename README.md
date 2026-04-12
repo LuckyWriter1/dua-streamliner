@@ -1315,13 +1315,13 @@ The availability design of DUA Streamliner targets 99.99% annual uptime with an 
 
 ---
 
-2.6 Scalability
+### 2.6 Scalability
 
 The scalability strategy of DUA Streamliner focuses on ensuring that the system can handle increasing workloads, particularly in scenarios involving large file uploads, intensive OCR processing, and AI-based data extraction.
 
 
 ---
-2.6.1 Scaling Drivers
+### 2.6.1 Scaling Drivers
 
 The system must scale based on the following factors:
 
@@ -1333,7 +1333,7 @@ Number of simultaneous long-running jobs
 
 ---
 
-2.6.2 Scalable Components
+### 2.6.2 Scalable Components
 
 The following components are designed to scale as demand increases:
 
@@ -1347,7 +1347,7 @@ Azure Notification Hubs	Auto-scalable for message throughput
 
 ---
 
-2.6.3 Horizontal Scaling (Compute Layer)
+### 2.6.3 Horizontal Scaling (Compute Layer)
 
 The backend and frontend services are deployed in Azure App Service with auto-scaling rules based on:
 
@@ -1359,7 +1359,7 @@ When thresholds are exceeded, additional instances are created automatically to 
 
 ---
 
-2.6.4 Asynchronous Processing Strategy
+### 2.6.4 Asynchronous Processing Strategy
 
 DUA generation is a long-running operation that includes:
 
@@ -1381,7 +1381,7 @@ This ensures the API remains responsive under high load.
 ---
 
 
-2.6.5 Storage Scalability
+### 2.6.5 Storage Scalability
 
 File uploads are handled directly by Azure Blob Storage using SAS tokens.
 
@@ -1395,7 +1395,7 @@ Optimized throughput for large documents
 
 ---
 
-2.6.6 Database Scaling
+### 2.6.6 Database Scaling
 
 Azure SQL Database supports vertical scaling by increasing:
 
@@ -1412,7 +1412,7 @@ caching layers for frequent queries
 ---
 
 
-2.6.7 Bottlenecks and Mitigation
+### 2.6.7 Bottlenecks and Mitigation
 
 Potential Bottleneck	Mitigation Strategy
 OCR processing time	Parallel processing of files
@@ -1425,7 +1425,7 @@ API overload	Rate limiting and autoscaling
 ---
 
 
-2.6.8 Scalability Summary
+### 2.6.8 Scalability Summary
 
 The system uses a combination of horizontal scaling, asynchronous processing, and cloud-native services to ensure high scalability. By offloading heavy operations (file storage and processing) to specialized Azure services, DUA Streamliner maintains performance and responsiveness even under high demand.
 
