@@ -1588,3 +1588,28 @@ Conclusion
 The backend workflows of DUA Streamliner are designed to handle complex document processing in a structured and scalable way. By separating file ingestion, processing, monitoring, and export into independent workflows, the system ensures high reliability, flexibility, and user transparency.
 
 
+
+
+
+flowchart LR
+    CA[Customs Agent]
+    M[Manager]
+
+    DUA[DUA Streamliner]
+
+    ENTRA[Azure Entra ID]
+    BLOB[Azure Blob Storage]
+    NOTIF[Azure Notification Hubs]
+    MONITOR[Azure Monitor / Application Insights]
+    TEMPLATE[Official DUA Template]
+
+    CA -->|Uploads files, monitors jobs, downloads DUA| DUA
+    M -->|Manages templates, reviews reports| DUA
+
+    DUA -->|Authenticates users and validates roles| ENTRA
+    DUA -->|Stores uploaded files, generated documents, archives| BLOB
+    DUA -->|Sends processing notifications| NOTIF
+    DUA -->|Sends logs, metrics, traces| MONITOR
+    DUA -->|Uses template structure to generate final .docx| TEMPLATE
+
+
