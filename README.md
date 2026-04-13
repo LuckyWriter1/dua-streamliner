@@ -1592,7 +1592,7 @@ Conclusion
 The backend workflows of DUA Streamliner are designed to handle complex document processing in a structured and scalable way. By separating file ingestion, processing, monitoring, and export into independent workflows, the system ensures high reliability, flexibility, and user transparency.
 
 
-2.8 Architecture Diagrams in Layers
+## 2.8 Architecture Diagrams in Layers
 
 DUA Streamliner follows the C4 model to document the system architecture at different abstraction levels.  
 For this project, the selected diagrams are:
@@ -1607,13 +1607,13 @@ These diagrams allow the architecture to be described progressively, from the ex
 
 ---
 
-2.8.1 Context Diagram
+### 2.8.1 Context Diagram
 
-Purpose
+#### Purpose
 
 The Context Diagram shows DUA Streamliner as a whole system and its relationship with the main external actors and external platforms.
 
-Main elements to include
+#### Main elements to include
 
 Person: Customs Agent
 - Uses the system to upload source documents, monitor processing, and download the generated DUA.
@@ -1656,7 +1656,7 @@ C4 – System Context Diagram – DUA Streamliner
 
 ---
 
-2.8.2 Container Diagram
+### 2.8.2 Container Diagram
 
 Purpose
 
@@ -1752,7 +1752,7 @@ C4 – Container Diagram – DUA Streamliner
 
 ---
 
-2.8.3 Code Diagram
+### 2.8.3 Code Diagram
 
 Purpose
 
@@ -1889,7 +1889,7 @@ Controllers receive HTTP requests and delegate actions to Services.
 Services orchestrate the business workflows and may use Repositories, Validation classes, Notifications, Security helpers, and Observability services.  
 Workers handle asynchronous processing and update job states independently from synchronous API requests.  
 Models define the internal data contracts, while Configuration centralizes access to infrastructure parameters and secret references.  
-This structure keeps the modular monolith organized, maintainable, and aligned with the layered architecture described in previous sections. :contentReference[oaicite:1]{index=1}
+This structure keeps the modular monolith organized, maintainable, and aligned with the layered architecture described in previous sections. 
 
 ---
 ## C4 – Code Diagram – Backend Modular Structure
@@ -1899,7 +1899,7 @@ This structure keeps the modular monolith organized, maintainable, and aligned w
 
 ---
 
-2.8.4 Relationship with the Layered Design
+### 2.8.4 Relationship with the Layered Design
 
 These diagrams are consistent with the layered architecture already defined in the frontend and backend sections.
 
