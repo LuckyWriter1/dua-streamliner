@@ -1915,7 +1915,522 @@ The C4-based architectural documentation of DUA Streamliner is composed of Conte
 This selection is sufficient to explain the system from the business interaction level down to the internal backend organization, while remaining aligned with the scope and the architecture decisions already defined in this README.
 
 
+---
+
+## 2.9 Design Considerations
+
+This section defines the main technical considerations that guide the backend design of DUA Streamliner. These considerations ensure that the system remains consistent, maintainable, scalable, and aligned with the operational requirements of customs document generation.
+
+---
+
+### 2.9.1 System Configuration, Parameters, and Policies
+
+All relevant system configurations, operational parameters, and technical policies must be explicitly documented and maintained within the source code repository.
+
+The backend must centralize configuration through strongly typed configuration classes and environment-specific settings files. Sensitive values must never be hardcoded and must always be retrieved through Azure Key Vault.
+
+The following configuration categories are defined:
+
+| Category | Examples |
+|---|---|
+| API configuration | base URLs, timeout values, retry limits |
+| Storage configuration | Blob container names, SAS token duration, archive retention windows |
+| Security configuration | token validation parameters, rate limits, maximum payload sizes |
+| Processing configuration | OCR timeout, AI extraction timeout, confidence thresholds |
+| Observability configuration | telemetry sampling rules, event names, log severity levels |
+| Archiving policies | active retention period, archive period, deletion rules |
+
+The following technical policies apply:
+
+- all configuration must be versioned in source control
+- all secrets must be stored in Azure Key Vault
+- all environment-specific configuration must be isolated by environment
+- all business-critical parameters must have explicit default values
+- all changes to system policies must be traceable through Git history
+
+This approach guarantees transparency, reproducibility, and controlled evolution of the system.
+
+---
+
+### 2.9.2 Resource Allocation
+
+The backend resource allocation is designed to support document-intensive and long-running operations such as OCR and semantic extraction, while maintaining responsiveness for standard API requests.
+
+Initial resource allocation is defined as follows:
+
+| Resource | Initial Allocation |
+|---|---|
+| Backend App Service Plan | 2 instances, 2 vCPU, 8 GB RAM each |
+| Frontend App Service Plan | 2 instances, 2 vCPU, 4 GB RAM each |
+| Azure SQL Database | General Purpose tier, autoscalable compute |
+| Azure Blob Storage | Standard GPv2 with ZRS |
+| Azure API Management | Premium tier |
+| Background processing worker | 2 parallel worker instances |
+
+The following operational rules apply:
+
+- synchronous API endpoints must remain lightweight and avoid executing heavy processing directly
+- OCR and AI extraction tasks must run only in background workers
+- file uploads must bypass the backend runtime memory by using direct Blob Storage uploads with SAS tokens
+- autoscaling thresholds must be configured for CPU, memory, and request count
+
+This design ensures that business requests and intensive processing workloads do not compete for the same runtime resources.
+
+---
+
+### 2.9.3 Core Business Algorithms and Parameters
+
+The backend applies a defined set of algorithms and technical rules during the DUA generation process.
+
+#### Document ingestion algorithm
+The system classifies each input file according to file type and processing path:
+
+- PDF with embedded text → direct text extraction
+- scanned PDF or image → OCR pipeline
+- Word document → structured text extraction
+- Excel document → tabular data extraction
+
+#### Semantic extraction algorithm
+After text is extracted, the system applies an AI-based semantic extraction process to identify customs-related entities such as:
+
+- importer/exporter information
+- supplier data
+- invoice numbers and dates
+- product descriptions
+- origin and destination country
+- FOB/CIF values
+- transport data
+- incoterms
+- customs regime
+
+#### Mapping algorithm
+The extracted entities are mapped to the official DUA template using a rule-based mapping layer combined with semantic similarity validation.
+
+#### Validation algorithm
+The system executes validation rules to verify:
+
+- required fields presence
+- internal value consistency
+- date validity
+- currency consistency
+- total calculations
+- template compatibility
+
+#### Confidence scoring parameters
+The system assigns confidence levels to each mapped field based on extraction certainty and validation consistency.
+
+| Confidence Level | Threshold |
+|---|---|
+| High | 0.85 – 1.00 |
+| Medium | 0.60 – 0.84 |
+| Low | 0.00 – 0.59 |
+
+The thresholds are configurable and may be adjusted after testing and calibration.
+
+#### Retry and timeout policies
+
+| Process | Timeout | Retry Policy |
+|---|---|---|
+| OCR processing | 30 seconds per file | 2 retries |
+| Semantic extraction | 45 seconds per file | 2 retries |
+| Blob Storage access | 10 seconds | 3 retries with exponential backoff |
+| Notification dispatch | 5 seconds | 3 retries with exponential backoff |
+
+These parameters ensure predictable execution behavior and controlled failure handling.
+
+---
+
+### 2.9.4 Agent Prototypes
+
+Because DUA Streamliner is an AI-assisted backend, the design includes the definition of specialized agent prototypes. These agents are conceptual backend modules focused on a specific responsibility. They are not autonomous systems with unrestricted behavior; instead, they operate inside controlled workflows and within predefined boundaries.
+
+The following agent prototypes are defined:
+
+| Agent Prototype | Responsibility |
+|---|---|
+| Document Classification Agent | Identify file type and determine the correct processing path |
+| OCR Extraction Agent | Extract text from scanned images and scanned PDFs |
+| Semantic Interpretation Agent | Identify customs-related entities from extracted text |
+| DUA Mapping Agent | Map extracted entities into the official DUA template structure |
+| Validation Agent | Apply consistency checks and detect incomplete or ambiguous fields |
+| Confidence Assessment Agent | Assign confidence scores and visual status indicators |
+
+These agents operate sequentially as part of the generation workflow.
+
+The following design rules apply to all agent prototypes:
+
+- agents do not access the database directly without service-layer mediation
+- agents do not expose public endpoints directly
+- agents only receive validated inputs
+- agent outputs must always be normalized into internal Models
+- agents must generate telemetry events for traceability
+- agent failures must be propagated through controlled exception handling
+
+This approach allows AI-based processing to remain modular, observable, and governed by the main backend architecture.
+
+---
+
+### 2.9.5 Interfaces, Proxies, and Integration Points
+
+The backend defines explicit interfaces and integration boundaries to reduce coupling and improve maintainability.
+
+#### Internal interfaces
+The service layer depends on contracts rather than concrete implementations wherever possible.
+
+Examples:
+
+- `IStorageService`
+- `IOcrService`
+- `ISemanticExtractionService`
+- `ITemplateService`
+- `INotificationService`
+- `IJobRepository`
+
+These interfaces support mocking, testing, and future replacement of providers.
+
+#### Proxy responsibilities
+Certain backend modules act as proxies to external services in order to encapsulate communication details.
+
+| Proxy / Gateway Module | External Dependency |
+|---|---|
+| StorageProxy | Azure Blob Storage |
+| IdentityProxy | Azure Entra ID |
+| NotificationProxy | Azure Notification Hubs |
+| TelemetryProxy | Azure Application Insights |
+| SecretsProxy | Azure Key Vault |
+
+These proxy modules isolate the rest of the backend from vendor-specific SDK details.
+
+#### Integration points
+The main backend integration points are:
+
+| Integration Point | Purpose |
+|---|---|
+| Azure Entra ID | authentication and RBAC validation |
+| Azure Blob Storage | file storage, generated document storage, archive storage |
+| Azure SQL Database | metadata persistence, template versions, job tracking |
+| Azure Notification Hubs | async notifications |
+| Azure Application Insights | logs, traces, and metrics |
+| Azure Key Vault | secrets and sensitive configuration |
+
+All integration points must be accessed through well-defined services or proxies, never directly from controllers.
+
+---
+
+### 2.9.6 Networking and Runtime Policies
+
+Although no external load balancer is required in the current design, the backend must still define runtime and networking policies.
+
+The following runtime rules apply:
+
+- all backend traffic must pass through Azure API Management
+- only HTTPS traffic is accepted
+- request size limits must be enforced at gateway and application level
+- CORS policies must restrict frontend origins by environment
+- health check endpoints must be exposed for availability monitoring
+- backend instances must remain stateless
+- long-running jobs must never block request threads
+
+These policies ensure a predictable deployment model and reduce operational risk.
+
+---
+
+### 2.9.7 Maintainability and Evolution Rules
+
+To support future growth, the backend must follow these maintainability rules:
+
+- business logic must remain in Services and not in Controllers
+- persistence logic must remain isolated in Repositories
+- AI-related logic must remain encapsulated in specialized services or agent modules
+- infrastructure-specific code must remain isolated behind proxies or configuration providers
+- every new workflow must define its events, telemetry, and validation rules
+- every new external integration must be added through an interface-first approach
+
+These rules protect the modular monolith structure from becoming tightly coupled or disorganized over time.
+
+---
+
+### Conclusion
+
+The backend design considerations of DUA Streamliner define how the system is configured, how resources are allocated, which algorithms and parameters govern processing, how AI agent prototypes are structured, and how interfaces and integration points are controlled. These considerations ensure that the backend remains robust, scalable, observable, and aligned with enterprise-level engineering practices.
 
 
+---
+
+
+## 2.10 Source Code
+
+The backend source code of DUA Streamliner will be generated as a structured skeleton aligned with the modular monolith architecture defined in this README. At this stage, the objective is not to implement full business functionality, but to establish a clean and extensible backend foundation that reflects the chosen technical design.
+
+The backend code must be placed inside the monorepo under the `duabusiness` folder, consistent with the repository structure defined in §2.1 and §2.4.
+
+---
+
+### 2.10.1 Source Code Generation Approach
+
+A specialized code-generation agent may be used to produce the backend skeleton based on the technical description documented in this README.
+
+The agent must be restricted to generating only:
+
+- folder structures
+- class definitions
+- interfaces
+- DTOs and Models
+- repository contracts
+- service contracts
+- configuration classes
+- placeholder controller definitions
+- worker class skeletons
+
+The agent must not implement:
+
+- final business logic
+- external service credentials
+- production secrets
+- hardcoded environment configuration
+- unreviewed automatic code behavior
+
+This ensures that the generated backend remains reviewable, maintainable, and aligned with the architectural design decisions already documented.
+
+---
+
+### 2.10.2 Expected Backend Folder Structure
+
+The backend project structure is defined as follows:
+
+```text
+duabusiness/
+  src/
+    Controllers/
+      AuthController.cs
+      UploadController.cs
+      GenerationController.cs
+      MonitoringController.cs
+      ExportController.cs
+      TemplateController.cs
+
+    Services/
+      Interfaces/
+        IStorageService.cs
+        IOcrService.cs
+        ISemanticExtractionService.cs
+        ITemplateService.cs
+        INotificationService.cs
+        IGenerationService.cs
+      StorageService.cs
+      OcrService.cs
+      SemanticExtractionService.cs
+      TemplateService.cs
+      NotificationService.cs
+      GenerationService.cs
+      MonitoringService.cs
+      ExportService.cs
+      JobRegistrationService.cs
+      ConfidenceScoringService.cs
+
+    Workers/
+      JobProcessorWorker.cs
+      OcrProcessingWorker.cs
+      SemanticExtractionWorker.cs
+      ArchivePolicyWorker.cs
+
+    Models/
+      GenerationJob.cs
+      UploadedFileReference.cs
+      DuaField.cs
+      DuaResult.cs
+      TemplateVersion.cs
+      UserContext.cs
+
+    DTOs/
+      UploadRequestDto.cs
+      UploadResponseDto.cs
+      JobStatusDto.cs
+      ExportRequestDto.cs
+      ExportResponseDto.cs
+      TemplateUploadDto.cs
+
+    Validation/
+      UploadRequestValidator.cs
+      TemplateValidator.cs
+      ExportRequestValidator.cs
+      DuaConsistencyValidator.cs
+
+    Security/
+      TokenValidationService.cs
+      PermissionEvaluator.cs
+      RolePolicyProvider.cs
+
+    Repositories/
+      Interfaces/
+        IJobRepository.cs
+        ITemplateRepository.cs
+        IAuditRepository.cs
+        IResultRepository.cs
+      JobRepository.cs
+      TemplateRepository.cs
+      AuditRepository.cs
+      ResultRepository.cs
+
+    Notifications/
+      NotificationPublisher.cs
+      JobStatusNotifier.cs
+
+    Observability/
+      TelemetryService.cs
+      AuditLogger.cs
+      ExceptionTracker.cs
+
+    Configuration/
+      KeyVaultSettingsProvider.cs
+      StorageOptions.cs
+      DatabaseOptions.cs
+      NotificationHubOptions.cs
+      ProcessingOptions.cs
+
+    Proxies/
+      StorageProxy.cs
+      IdentityProxy.cs
+      NotificationProxy.cs
+      TelemetryProxy.cs
+      SecretsProxy.cs
+
+    Common/
+      Result.cs
+      ErrorCodes.cs
+      Constants.cs
+
+  tests/
+    Unit/
+    Integration/
+
+  infra/
+    main.bicep
+    modules/
+      appservice.bicep
+      apim.bicep
+      sql.bicep
+      storage.bicep
+      keyvault.bicep
+      notificationhubs.bicep
+      insights.bicep
+```
+
+### 2.10.3 Main Class Responsibilities
+
+The following classes are considered the primary backend building blocks:
+
+| Class                       | Responsibility                                                     |
+| --------------------------- | ------------------------------------------------------------------ |
+| `UploadController`          | Receive upload-related requests and issue SAS upload authorization |
+| `GenerationController`      | Start generation jobs and expose generation endpoints              |
+| `MonitoringController`      | Return job status and processing progress                          |
+| `ExportController`          | Generate and return secure export links                            |
+| `TemplateController`        | Allow managers to upload and manage DUA templates                  |
+| `GenerationService`         | Orchestrate the full DUA generation workflow                       |
+| `OcrService`                | Coordinate OCR processing for scanned files                        |
+| `SemanticExtractionService` | Extract customs-related entities from text                         |
+| `TemplateService`           | Load and manage DUA template versions                              |
+| `ConfidenceScoringService`  | Assign confidence levels to mapped fields                          |
+| `JobProcessorWorker`        | Execute pending generation jobs asynchronously                     |
+| `ArchivePolicyWorker`       | Enforce retention and archive policies                             |
+| `JobRepository`             | Persist and retrieve job state data                                |
+| `TelemetryService`          | Emit structured telemetry events                                   |
+| `TokenValidationService`    | Validate Azure Entra ID bearer tokens                              |
+
+This structure reflects the layered and modular architecture already described in previous sections.
+
+---
+
+## 2.10.4 Key Internal Contracts
+
+The backend must be driven by explicit interfaces so that implementation details remain replaceable.
+
+Examples of key contracts include:
+
+| Interface                    | Purpose                                         |
+| ---------------------------- | ----------------------------------------------- |
+| `IStorageService`            | Abstract interaction with Azure Blob Storage    |
+| `IOcrService`                | Define OCR processing behavior                  |
+| `ISemanticExtractionService` | Define semantic extraction behavior             |
+| `ITemplateService`           | Define template loading and versioning behavior |
+| `INotificationService`       | Define notification publishing behavior         |
+| `IGenerationService`         | Define end-to-end DUA generation orchestration  |
+| `IJobRepository`             | Define persistence access for generation jobs   |
+
+This interface-first design supports unit testing, mocking, and future replacement of service providers.
+
+---
+
+
+## 2.10.5 Alignment with Repository Architecture
+
+The backend code structure must remain aligned with the selected monorepo architecture.
+
+Repository distribution:
+
+| Repository Section | Purpose                            |
+| ------------------ | ---------------------------------- |
+| `duastreamliner/`  | Frontend application               |
+| `duabusiness/`     | Backend application                |
+| `infra/`           | Infrastructure as Code definitions |
+| `tests/`           | Automated validation and testing   |
+
+The backend must not mix frontend concerns, and the infrastructure definitions must remain outside runtime business folders.
+
+---
+
+## 2.10.6 Direct Links to Key Folders and Classes
+
+When the repository is published in Azure DevOps Repositories or mirrored to GitHub, direct links to key backend folders and primary classes should be added in this section.
+
+Suggested links to include:
+
+duabusiness/src/Controllers/
+duabusiness/src/Services/
+duabusiness/src/Workers/
+duabusiness/src/Repositories/
+duabusiness/src/Configuration/
+duabusiness/src/Controllers/GenerationController.cs
+duabusiness/src/Services/GenerationService.cs
+duabusiness/src/Workers/JobProcessorWorker.cs
+
+Example placeholder format:
+
+- [Controllers](./duabusiness/src/Controllers/)
+- [Services](./duabusiness/src/Services/)
+- [Workers](./duabusiness/src/Workers/)
+- [Repositories](./duabusiness/src/Repositories/)
+- [GenerationController.cs](./duabusiness/src/Controllers/GenerationController.cs)
+- [GenerationService.cs](./duabusiness/src/Services/GenerationService.cs)
+- [JobProcessorWorker.cs](./duabusiness/src/Workers/JobProcessorWorker.cs)
+
+These links must be updated once the backend skeleton is committed to the repository.
+
+---
+
+## 2.10.7 Quality Rules for Generated Skeleton Code
+
+All generated backend skeleton code must follow these rules:
+
+use clear namespace separation
+follow ASP.NET Core naming conventions
+keep controllers thin
+keep business logic in Services
+keep persistence logic in Repositories
+use dependency injection for services and repositories
+use configuration binding for runtime options
+define DTOs separately from domain Models
+avoid embedding infrastructure access directly in controllers
+include XML comments or summary comments in public classes where useful
+
+
+These rules ensure that the generated skeleton can evolve into a production-quality backend without major restructuring.
+
+---
+
+Conclusion
+
+The backend source code section of DUA Streamliner defines the expected folder structure, class responsibilities, service contracts, and repository alignment needed to build the project skeleton. The code-generation process must remain limited to structural artifacts without implementing final business behavior, ensuring that the backend evolves on top of a controlled and well-documented foundation.
 
 
