@@ -1899,6 +1899,8 @@ This structure keeps the modular monolith organized, maintainable, and aligned w
 
 ![Diagram](images/mermaid-diagram (1).png)
 
+![Configure Generator](images/configure.png)
+
 
 
 
