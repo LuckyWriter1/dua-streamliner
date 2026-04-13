@@ -1648,14 +1648,14 @@ Long-running processes communicate status changes through Azure Notification Hub
 Operational telemetry is sent to Azure Monitor through Application Insights.  
 The system uses the official DUA template as the structural basis for the generated output.
 
-
+---
 C4 – System Context Diagram – DUA Streamliner
 
 
 ![Login Screen](images/mermaid-diagram.png)
 
-
 ---
+
 2.8.2 Container Diagram
 
 Purpose
@@ -1745,14 +1745,14 @@ The backend exposes endpoints for progress tracking and document export.
 Notifications may be sent through Azure Notification Hubs, and logs and metrics are sent to Azure Monitor / Application Insights.  
 Sensitive configuration is retrieved from Azure Key Vault.
 
-
+---
 C4 – Container Diagram – DUA Streamliner
 
 
-![Diagram](images/mermaid-diagram (2).png)
-
+![Diagram](images/mermaid-diagram(2).png)
 
 ---
+
 2.8.3 Code Diagram
 
 Purpose
@@ -1896,15 +1896,9 @@ This structure keeps the modular monolith organized, maintainable, and aligned w
 ## C4 – Code Diagram – Backend Modular Structure
 
 
+![Diagram](images/mermaid-diagram(1).png)
 
-![Diagram](images/mermaid-diagram (1).png)
-
-![Configure Generator](images/configure.png)
-
-
-
-
-
+---
 
 2.8.4 Relationship with the Layered Design
 
