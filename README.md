@@ -2,6 +2,9 @@
 
 > Eliminating operational manual work in the preparation of the DUA through semantic extraction, advanced OCR, and artificial intelligence.
 
+
+images/heatmap-monitoring.png
+
 ---
 ## Autores
 
