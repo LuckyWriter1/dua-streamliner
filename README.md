@@ -13,7 +13,7 @@
 
 
 
-![Login Screen](images/heatmap-monitoring.png)
+![Login Screen](images/mermaid-diagram.png)
 
 **Course:** Software Design — Computer Engineering  
 **Professor:** Rodrigo Núñez  
