@@ -1747,9 +1747,12 @@ The backend exposes endpoints for progress tracking and document export.
 Notifications may be sent through Azure Notification Hubs, and logs and metrics are sent to Azure Monitor / Application Insights.  
 Sensitive configuration is retrieved from Azure Key Vault.
 
-Suggested title for the diagram
 
+---
 C4 – Container Diagram – DUA Streamliner
+
+
+![Diagram](images/mermaid-diagram (2).png)
 
 ---
 
@@ -1892,10 +1895,10 @@ Workers handle asynchronous processing and update job states independently from 
 Models define the internal data contracts, while Configuration centralizes access to infrastructure parameters and secret references.  
 This structure keeps the modular monolith organized, maintainable, and aligned with the layered architecture described in previous sections. :contentReference[oaicite:1]{index=1}
 
-Suggested title for the diagram
-
+---
 C4 – Code Diagram – Backend Modular Structure
 
+![Diagram](images/mermaid-diagram (1).png)
 ---
 
 2.8.4 Relationship with the Layered Design
