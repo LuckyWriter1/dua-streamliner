@@ -1652,7 +1652,7 @@ The system uses the official DUA template as the structural basis for the genera
 C4 – System Context Diagram – DUA Streamliner
 
 
-![Login Screen](images/mermaid-diagram.png)
+![Context Diagram](images/mermaid-diagram.png)
 
 ---
 
