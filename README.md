@@ -2386,6 +2386,7 @@ When the repository is published in Azure DevOps Repositories or mirrored to Git
 
 Suggested links to include:
 
+```text
 duabusiness/src/Controllers/
 duabusiness/src/Services/
 duabusiness/src/Workers/
@@ -2394,6 +2395,7 @@ duabusiness/src/Configuration/
 duabusiness/src/Controllers/GenerationController.cs
 duabusiness/src/Services/GenerationService.cs
 duabusiness/src/Workers/JobProcessorWorker.cs
+```
 
 Example placeholder format:
 
