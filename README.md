@@ -13,8 +13,6 @@
 
 
 
-![Login Screen](images/mermaid-diagram.png)
-
 **Course:** Software Design — Computer Engineering  
 **Professor:** Rodrigo Núñez  
 **Start Date:** March 6, 2026
@@ -1654,7 +1652,9 @@ The system uses the official DUA template as the structural basis for the genera
 
 C4 – System Context Diagram – DUA Streamliner
 
-![Configure Generator](images/mermaid-diagram.png‎)
+
+![Login Screen](images/mermaid-diagram.png)
+
 
 ---
 
