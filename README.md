@@ -164,6 +164,7 @@ Create a grayscale low-fidelity wireframe for an enterprise web application wher
 ### Wireframe Image
 ![Configure Generator](images/configure.png)
 
+
 ---
 
 ## Wireframe 3 — Monitoring Progress Screen
@@ -1644,9 +1645,11 @@ Long-running processes communicate status changes through Azure Notification Hub
 Operational telemetry is sent to Azure Monitor through Application Insights.  
 The system uses the official DUA template as the structural basis for the generated output.
 
-Suggested title for the diagram
+---
 
 C4 – System Context Diagram – DUA Streamliner
+
+![Configure Generator](images/mermaid-diagram.png‎)
 
 ---
 
