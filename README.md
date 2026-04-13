@@ -3,8 +3,6 @@
 > Eliminating operational manual work in the preparation of the DUA through semantic extraction, advanced OCR, and artificial intelligence.
 
 
-images/heatmap-monitoring.png
-
 ---
 ## Autores
 
@@ -13,6 +11,9 @@ images/heatmap-monitoring.png
 |Santiago Espinoza Rendón     |2024156530|Instituto Tecnológico de Costa Rica |
 |Jose Ignacio Paniagua Vargas |2024163735|Instituto Tecnológico de Costa Rica |
 
+
+
+![Login Screen](images/heatmap-monitoring.png)
 
 **Course:** Software Design — Computer Engineering  
 **Professor:** Rodrigo Núñez  
@@ -153,6 +154,7 @@ Create a grayscale low-fidelity wireframe for an enterprise web application logi
 
 ### Wireframe Image
 ![Login Screen](images/login.png)
+
 
 ---
 
