@@ -1748,7 +1748,7 @@ Sensitive configuration is retrieved from Azure Key Vault.
 ---
 C4 – Container Diagram – DUA Streamliner
 
-![Diagram](images/mermaid-diagram(2).png)
+![Diagram](images/containerDiagram.png)
 
 ---
 
@@ -1895,7 +1895,7 @@ This structure keeps the modular monolith organized, maintainable, and aligned w
 ## C4 – Code Diagram – Backend Modular Structure
 
 
-![Diagram](images/mermaid-diagram(1).png) 
+![Diagram](images/codeDiagram.png) 
 
 ---
 
