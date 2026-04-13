@@ -1895,10 +1895,16 @@ This structure keeps the modular monolith organized, maintainable, and aligned w
 
 ## C4 – Code Diagram – Backend Modular Structure
 
+
+
+
 ![Diagram](./images/mermaid-diagram (1).png)
 
 
----
+
+
+
+
 2.8.4 Relationship with the Layered Design
 
 These diagrams are consistent with the layered architecture already defined in the frontend and backend sections.
