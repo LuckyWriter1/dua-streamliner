@@ -1892,9 +1892,8 @@ Workers handle asynchronous processing and update job states independently from 
 Models define the internal data contracts, while Configuration centralizes access to infrastructure parameters and secret references.  
 This structure keeps the modular monolith organized, maintainable, and aligned with the layered architecture described in previous sections. :contentReference[oaicite:1]{index=1}
 
-
+---
 ## C4 – Code Diagram – Backend Modular Structure
-
 
 
 
